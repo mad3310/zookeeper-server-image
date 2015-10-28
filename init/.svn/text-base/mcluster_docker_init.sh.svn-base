@@ -1,0 +1,63 @@
+#! /bin/bash
+
+function checkvar(){
+  if [ ! $2 ]; then
+    echo ERROR: need  $1
+    exit 1
+  fi
+}
+
+checkvar ZKID $ZKID
+checkvar IP $IP
+checkvar NETMASK $NETMASK
+checkvar GATEWAY $GATEWAY
+checkvar N1_IP $N1_IP
+checkvar N2_IP $N2_IP
+checkvar N3_IP $N3_IP
+checkvar N1_HOSTNAME $N1_HOSTNAME
+checkvar N2_HOSTNAME $N2_HOSTNAME
+checkvar N3_HOSTNAME $N3_HOSTNAME
+
+#hosts
+umount /etc/hosts
+cat > /etc/hosts << EOF
+127.0.0.1 localhost
+$N1_IP $N1_HOSTNAME
+$N2_IP $N2_HOSTNAME
+$N3_IP $N3_HOSTNAME
+EOF
+echo 'set host successfully'
+
+#network
+cat > /etc/sysconfig/network-scripts/ifcfg-eth1 << EOF
+DEVICE=eth1
+ONBOOT=yes
+BOOTPROTO=static
+IPADDR=$IP
+NETMASK=$NETMASK
+GATEWAY=$GATEWAY
+EOF
+ifup eth1
+echo 'set network successfully'
+
+#zoo.cfg
+sed "s/#server.1=zookeeper1:2888:3888/server.1=${N1_IP}:2888:3888/g" -i /etc/zookeeper/conf/zoo.cfg
+sed "s/#server.2=zookeeper2:2888:3888/server.2=${N2_IP}:2888:3888/g" -i /etc/zookeeper/conf/zoo.cfg
+sed "s/#server.3=zookeeper3:2888:3888/server.3=${N3_IP}:2888:3888/g" -i /etc/zookeeper/conf/zoo.cfg
+echo $ZKID > /etc/zookeeper/conf/myid
+echo 'set zoo.cf and myid successuflly'
+
+#my.cnf
+sed -e "/\[mysqld_safe\]/i\wsrep_node_address=${IP}" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\expire-logs-days = 14" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\innodb_file_per_table = 1" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\skip-name-resolve" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\max_connections=5000" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\max_user_connections=200" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\innodb_buffer_pool_size=10240M" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\innodb_log_file_size=1024M" -i /opt/letv/mcluster/root/etc/my.cnf
+sed -e "/\[mysqld_safe\]/i\innodb_log_buffer_size=256M" -i /opt/letv/mcluster/root/etc/my.cnf
+sed "s/#wsrep_node_name=node1/wsrep_node_name=node1/g" -i /opt/letv/mcluster/root/etc/my.cnf
+echo 'set my.cnf successuflly'
+
+$@
