@@ -65,7 +65,7 @@ initLimit=10
 syncLimit=5
 dataDir=/var/lib/zookeeper
 clientPort=2181
-maxClientCnxns=100
+maxClientCnxns=0
 EOF
 
 for (( i = 1; i <= $NODE_COUNT; i++ ))
@@ -79,18 +79,18 @@ ln -s /etc/zookeeper/conf/myid /var/lib/zookeeper/myid
 echo 'set zoo.cf and myid successuflly'
 
 #crond init
+is_wr_cron1=`grep "zookeeper" /etc/crontab |wc -l`
+if [ $is_wr_cron1 -eq 0 ]
+then
 echo "1 */6 * * * root java -cp /usr/local/zookeeper/zookeeper-3.4.6.jar:/usr/local/zookeeper/lib/log4j-1.2.16.jar:/usr/local/zookeeper/lib/slf4j-api-1.6.1.jar:/usr/local/zookeeper/lib/slf4j-log4j12-1.6.1.jar:conf org.apache.zookeeper.server.PurgeTxnLog /var/lib/zookeeper/ -n 3" >> /etc/crontab
+fi
 
-#zabbix init
-cd /usr/local
-chmod 775 zabbix_install.sh
-./zabbix_install.sh
-cd /usr/local/zabbix/conf
-touch host.temp
-echo "${IP},115.182.93.64,218.206.201.236,211.162.59.93,114.80.187.245,114.80.187.246,121.14.196.239,10.0.51.13" > host.temp
+is_wr_cron2=`grep "check_zk" /etc/crontab |wc -l`
+if [ $is_wr_cron2 -eq 0 ]
+then
+echo "* * * * * root /usr/local/init/check_zk.sh > /tmp/check_zk.log 2>&1 &">> /etc/crontab
+fi
+
 service crond restart
-cd /usr/local/zabbix
-./install.sh
-./check_zabbix.sh
 
 $@
