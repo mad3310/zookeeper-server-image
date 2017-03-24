@@ -40,7 +40,7 @@ done
 echo 'set host successfully'
 
 #network
-IFACE=${IFACE:-pbond0}
+IFACE=${IFACE:-peth1}
 cat > /etc/sysconfig/network-scripts/ifcfg-$IFACE << EOF
 DEVICE=$IFACE
 ONBOOT=yes
@@ -49,13 +49,13 @@ IPADDR=$IP
 NETMASK=$NETMASK
 GATEWAY=$GATEWAY
 EOF
-ifconfig $IFACE $IP/16
+ifconfig $IFACE $IP/24
 echo 'set network successfully'
 
 #route
-gateway=`echo $IP | cut -d. -f1,2`.0.1
-route add default gw $gateway
+gateway=`echo $IP | cut -d. -f1,2`.91.1
 route del -net 0.0.0.0 netmask 0.0.0.0 dev eth0
+route add default gw $gateway
 
 #zoo.cfg
 mkdir -p /etc/zookeeper/conf/

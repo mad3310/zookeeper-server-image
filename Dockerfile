@@ -1,5 +1,5 @@
-FROM 10.160.140.32:5000/letv-centos6
-MAINTAINER bingzheng.zhou <zhoubingzheng@letv.com>
+FROM 120.132.124.218:5000/polex/centos:6
+MAINTAINER bingzheng.zhou <bingzheng@polex.com.cn>
 
 RUN rpm -ivh http://pkg-repo.oss.letv.com/pkgs/centos6/letv-release.noarch.rpm
 RUN yum install cronie -y
@@ -8,7 +8,7 @@ RUN yum update bash -y
 RUN yum update tar -y
 RUN yum install java-1.7.0-openjdk-devel -y
 
-EXPOSE 4567 4568 4569 2181 2888 3888
+EXPOSE 2181 2888 3888
 USER root
 
 RUN mkdir -p /usr/local/init/
